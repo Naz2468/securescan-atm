@@ -313,7 +313,7 @@ function AuthPage() {
         <section className="mt-4 rounded border border-[color:var(--border)] bg-panel p-4">
           <BiometricStatus
             faceStatus={faceStatus}
-            faceScore={faceDescriptor ? Math.round(Math.random() * 0 + 100) : null}
+            faceScore={faceDescriptor ? null : null}
             fingerStatus={fingerStatus}
             fingerScore={fingerScore}
           />
