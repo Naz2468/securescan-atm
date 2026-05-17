@@ -14,7 +14,179 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      atm_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          token?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atm_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "atm_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atm_users: {
+        Row: {
+          account_no: string
+          balance: number
+          created_at: string
+          full_name: string
+          id: string
+        }
+        Insert: {
+          account_no: string
+          balance?: number
+          created_at?: string
+          full_name: string
+          id?: string
+        }
+        Update: {
+          account_no?: string
+          balance?: number
+          created_at?: string
+          full_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      auth_logs: {
+        Row: {
+          account_no: string | null
+          attempted_at: string
+          auth_result: string | null
+          face_match: boolean | null
+          face_score: number | null
+          finger_match: boolean | null
+          finger_score: number | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          account_no?: string | null
+          attempted_at?: string
+          auth_result?: string | null
+          face_match?: boolean | null
+          face_score?: number | null
+          finger_match?: boolean | null
+          finger_score?: number | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          account_no?: string | null
+          attempted_at?: string
+          auth_result?: string | null
+          face_match?: boolean | null
+          face_score?: number | null
+          finger_match?: boolean | null
+          finger_score?: number | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auth_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "atm_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      biometrics: {
+        Row: {
+          face_descriptor: string
+          fingerprint_path: string
+          fingerprint_url: string
+          id: string
+          registered_at: string
+          user_id: string
+        }
+        Insert: {
+          face_descriptor: string
+          fingerprint_path: string
+          fingerprint_url: string
+          id?: string
+          registered_at?: string
+          user_id: string
+        }
+        Update: {
+          face_descriptor?: string
+          fingerprint_path?: string
+          fingerprint_url?: string
+          id?: string
+          registered_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biometrics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "atm_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          amount: number | null
+          created_at: string
+          id: string
+          recipient: string | null
+          reference: string | null
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          id?: string
+          recipient?: string | null
+          reference?: string | null
+          status?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          id?: string
+          recipient?: string | null
+          reference?: string | null
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "atm_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
