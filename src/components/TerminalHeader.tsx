@@ -6,6 +6,7 @@ const STEPS = [
   { path: "/auth", label: "VERIFY" },
   { path: "/menu", label: "TRANSACT" },
   { path: "/logs", label: "LOGS" },
+  { path: "/about", label: "ABOUT" },
 ];
 
 export function TerminalHeader({ step }: { step?: number }) {
