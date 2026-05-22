@@ -111,7 +111,7 @@ function WelcomePage() {
         </section>
 
         <p className="mt-6 text-center text-xs text-muted">
-          Academic prototype · UCC SECUREPAY · v1.0
+          Aba Peter Owoicho · BHU/22/04/09/0079 · Bingham University · Dept. of Cyber Security · 2026
         </p>
       </main>
     </div>
