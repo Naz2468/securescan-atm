@@ -13,6 +13,7 @@ import { Route as MenuRouteImport } from './routes/menu'
 import { Route as LogsRouteImport } from './routes/logs'
 import { Route as EnrollRouteImport } from './routes/enroll'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 
 const MenuRoute = MenuRouteImport.update({
@@ -35,6 +36,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -43,6 +49,7 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/enroll': typeof EnrollRoute
   '/logs': typeof LogsRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/enroll': typeof EnrollRoute
   '/logs': typeof LogsRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/enroll': typeof EnrollRoute
   '/logs': typeof LogsRoute
@@ -65,14 +74,15 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/enroll' | '/logs' | '/menu'
+  fullPaths: '/' | '/about' | '/auth' | '/enroll' | '/logs' | '/menu'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/enroll' | '/logs' | '/menu'
-  id: '__root__' | '/' | '/auth' | '/enroll' | '/logs' | '/menu'
+  to: '/' | '/about' | '/auth' | '/enroll' | '/logs' | '/menu'
+  id: '__root__' | '/' | '/about' | '/auth' | '/enroll' | '/logs' | '/menu'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
   EnrollRoute: typeof EnrollRoute
   LogsRoute: typeof LogsRoute
@@ -109,6 +119,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -121,6 +138,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
   EnrollRoute: EnrollRoute,
   LogsRoute: LogsRoute,
