@@ -57,10 +57,9 @@ function AuthPage() {
         setLoadingMsg("LOADING FACE-API MODELS...");
         await loadFaceApi();
         if (cancelled) return;
-        setLoadingMsg("LOADING OPENCV.JS...");
-        await loadOpenCV();
-        if (cancelled) return;
         setModelsReady(true);
+        // Warm OpenCV in the background; failures here don't block the UI.
+        loadOpenCV().catch((err) => console.warn("opencv warm failed", err));
       } catch (e) {
         setModelsError((e as Error).message);
       }
