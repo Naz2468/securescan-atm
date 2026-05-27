@@ -221,12 +221,12 @@ function AuthPage() {
 
   if (!acct) {
     return (
-      <div className="min-h-screen bg-background font-mono">
+      <div className="min-h-screen bg-background">
         <TerminalHeader step={1} />
-        <main className="mx-auto max-w-xl px-4 py-16 text-center">
-          <p className="text-warn">NO ACCOUNT NUMBER PROVIDED</p>
+        <main className="mx-auto max-w-md px-5 py-16 text-center">
+          <p className="text-warn">No account number provided</p>
           <a href="/" className="mt-4 inline-block text-accent underline">
-            ← Return to welcome
+            ← Back to home
           </a>
         </main>
       </div>
@@ -235,17 +235,12 @@ function AuthPage() {
 
   if (!modelsReady) {
     return (
-      <div className="min-h-screen bg-background font-mono">
+      <div className="min-h-screen bg-background">
         <TerminalHeader step={1} />
-        <main className="mx-auto flex max-w-xl flex-col items-center px-4 py-24 text-center">
+        <main className="mx-auto flex max-w-md flex-col items-center px-5 py-24 text-center">
           <Loader2 className="h-10 w-10 animate-spin text-accent" />
-          <div className="mt-6 tracking-widest text-accent">{loadingMsg}</div>
-          {modelsError && (
-            <div className="mt-4 text-sm text-danger">ERROR: {modelsError}</div>
-          )}
-          <div className="mt-2 text-xs text-muted">
-            face-api.js · opencv.js · loading from CDN
-          </div>
+          <div className="mt-6 text-sm text-accent">{loadingMsg}</div>
+          {modelsError && <div className="mt-4 text-sm text-danger">Error: {modelsError}</div>}
         </main>
       </div>
     );
@@ -256,26 +251,25 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background font-mono">
+    <div className="min-h-screen bg-background">
       <TerminalHeader step={1} />
-      <main className="mx-auto max-w-6xl px-4 py-6">
-        <div className="mb-4 flex items-baseline justify-between">
+      <main className="mx-auto max-w-md px-5 pb-16 pt-6">
+        <div className="mb-5 flex items-center justify-between">
           <div>
-            <div className="text-xs tracking-widest text-muted">// BIOMETRIC VERIFICATION</div>
-            <div className="text-2xl text-accent">ACCT · {maskAccount(acct)}</div>
+            <div className="text-xs text-muted">Verifying</div>
+            <div className="text-lg font-medium">{maskAccount(acct)}</div>
           </div>
-          <a href="/" className="text-xs tracking-widest text-muted hover:text-accent">
-            ← CANCEL
-          </a>
+          <a href="/" className="text-sm text-muted hover:text-accent">Cancel</a>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          {/* Face panel */}
-          <section className="rounded border border-[color:var(--border)] bg-panel p-4">
+        <div className="space-y-4">
+          <section className="rounded-3xl bg-panel p-5">
             <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-accent">
-                <ScanFace className="h-5 w-5" />
-                <span className="text-xs tracking-widest">FACTOR 1 · FACIAL RECOGNITION</span>
+              <div className="flex items-center gap-2">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-accent-dim text-accent">
+                  <ScanFace className="h-4 w-4" />
+                </span>
+                <span className="text-sm font-medium">Face</span>
               </div>
               <span className="text-xs text-muted">{faceStatus}</span>
             </div>
@@ -283,56 +277,52 @@ function AuthPage() {
             <button
               onClick={captureFace}
               disabled={faceStatus === "PROCESSING" || faceStatus === "DETECTING"}
-              className="mt-3 w-full rounded border border-accent bg-accent-dim py-2 text-xs tracking-widest text-accent hover:bg-accent hover:text-[color:var(--bg)] disabled:opacity-40"
+              className="mt-3 w-full rounded-full bg-accent-dim py-2.5 text-sm text-accent hover:bg-accent hover:text-[color:var(--bg)] disabled:opacity-40"
             >
-              {faceStatus === "MATCHED" ? "RE-CAPTURE FACE" : "CAPTURE FACE"}
+              {faceStatus === "MATCHED" ? "Re-capture" : "Capture face"}
             </button>
           </section>
 
-          {/* Fingerprint panel */}
-          <section className="rounded border border-[color:var(--border)] bg-panel p-4">
+          <section className="rounded-3xl bg-panel p-5">
             <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-accent">
-                <span className="text-xs tracking-widest">FACTOR 2 · FINGERPRINT</span>
-              </div>
+              <span className="text-sm font-medium">Fingerprint</span>
               <span className="text-xs text-muted">{fingerStatus}</span>
             </div>
             <FingerprintUpload onPicked={onFingerPicked} status={fingerStatus as never} />
             {!storedFingerUrl && (
               <div className="mt-3 text-xs text-warn">
-                ⚠ No fingerprint enrolled for this account.{" "}
-                <a href="/enroll" className="underline">
-                  Enroll first
-                </a>
+                No fingerprint enrolled.{" "}
+                <a href="/enroll" className="underline">Enroll first</a>
               </div>
             )}
           </section>
-        </div>
 
-        <section className="mt-4 rounded border border-[color:var(--border)] bg-panel p-4">
-          <BiometricStatus
-            faceStatus={faceStatus}
-            faceScore={faceDescriptor ? null : null}
-            fingerStatus={fingerStatus}
-            fingerScore={fingerScore}
-          />
-          <button
-            onClick={runAuth}
-            disabled={!canAuthenticate || authing}
-            className="mt-4 w-full rounded border border-accent bg-accent py-3 text-sm font-bold tracking-widest text-[color:var(--bg)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
-          >
-            {authing ? "AUTHENTICATING..." : "AUTHENTICATE"}
-          </button>
-          {progress.length > 0 && (
-            <pre className="mt-3 max-h-32 overflow-auto rounded bg-background p-3 text-xs text-accent">
-              {progress.join("\n")}
-            </pre>
-          )}
-        </section>
+          <section className="rounded-3xl bg-panel p-5">
+            <BiometricStatus
+              faceStatus={faceStatus}
+              faceScore={faceDescriptor ? null : null}
+              fingerStatus={fingerStatus}
+              fingerScore={fingerScore}
+            />
+            <button
+              onClick={runAuth}
+              disabled={!canAuthenticate || authing}
+              className="mt-4 w-full rounded-full bg-accent py-3 text-sm font-medium text-[color:var(--bg)] hover:opacity-90 disabled:opacity-30"
+            >
+              {authing ? "Authenticating…" : "Authenticate"}
+            </button>
+            {progress.length > 0 && (
+              <pre className="mt-3 max-h-32 overflow-auto rounded-2xl bg-background p-3 text-xs text-accent">
+                {progress.join("\n")}
+              </pre>
+            )}
+          </section>
+        </div>
       </main>
     </div>
   );
 }
+
 
 function AuthResult({ result, onRetry }: { result: Result; onRetry: () => void }) {
   return (

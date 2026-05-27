@@ -16,6 +16,8 @@ import {
   LogOut,
   ArrowLeft,
   Loader2,
+  ArrowDown,
+  ArrowUp,
 } from "lucide-react";
 
 export const Route = createFileRoute("/menu")({
@@ -44,71 +46,74 @@ function MenuPage() {
 
   if (!user || !sessionToken || !sessionExpiry) {
     return (
-      <div className="min-h-screen bg-background font-mono">
+      <div className="min-h-screen bg-background">
         <TerminalHeader step={2} />
-        <main className="mx-auto max-w-md px-4 py-16 text-center text-muted">
-          Loading session…
-        </main>
+        <main className="mx-auto max-w-md px-5 py-16 text-center text-muted">Loading…</main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background font-mono">
+    <div className="min-h-screen bg-background">
       <TerminalHeader step={2} />
-      <main className="mx-auto max-w-5xl px-4 py-6">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="text-xs tracking-widest text-muted">WELCOME</div>
-            <div className="text-xl text-accent">{user.full_name}</div>
-            <div className="text-xs text-muted">{maskAccount(user.account_no)}</div>
-          </div>
+      <main className="mx-auto max-w-md px-5 pb-16 pt-6">
+        <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-accent-dim font-semibold text-accent">
+              {user.full_name.slice(0, 2).toUpperCase()}
+            </span>
+            <div>
+              <div className="text-xs text-muted">Welcome</div>
+              <div className="text-sm font-medium">{user.full_name}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
             <SessionTimer expiresAt={sessionExpiry} onExpire={logout} />
             <button
               onClick={logout}
-              className="inline-flex items-center gap-2 rounded border border-danger px-3 py-1 text-xs tracking-widest text-danger hover:bg-[color:var(--danger)] hover:text-[color:var(--bg)]"
+              className="grid h-9 w-9 place-items-center rounded-full bg-panel text-danger hover:bg-[color:var(--danger)] hover:text-[color:var(--bg)]"
+              aria-label="Logout"
             >
-              <LogOut className="h-3 w-3" /> LOGOUT
+              <LogOut className="h-4 w-4" />
             </button>
           </div>
         </div>
 
+        <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#9bef5a] via-[#5ed47a] to-[#1f2e26] p-6 text-[color:var(--bg)] shadow-xl">
+          <div className="text-xs opacity-70">Main Wallet</div>
+          <div className="mt-1 text-3xl font-semibold">{formatNGN(user.balance)}</div>
+          <div className="mt-1 text-xs opacity-70">{maskAccount(user.account_no)}</div>
+          <div className="mt-6 flex gap-2">
+            <button
+              onClick={() => setView("WITHDRAW")}
+              className="flex-1 rounded-full bg-[color:var(--bg)]/15 py-2 text-sm font-medium backdrop-blur"
+            >
+              Withdraw
+            </button>
+            <button
+              onClick={() => setView("TRANSFER")}
+              className="flex-1 rounded-full bg-[color:var(--bg)] py-2 text-sm font-medium text-accent"
+            >
+              Transfer
+            </button>
+          </div>
+        </section>
+
         {view !== "GRID" && (
           <button
             onClick={() => setView("GRID")}
-            className="mb-4 inline-flex items-center gap-2 text-xs tracking-widest text-muted hover:text-accent"
+            className="mt-5 inline-flex items-center gap-2 text-sm text-muted hover:text-accent"
           >
-            <ArrowLeft className="h-3 w-3" /> BACK TO MENU
+            <ArrowLeft className="h-4 w-4" /> Back
           </button>
         )}
 
         {view === "GRID" && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Tile
-              icon={<Wallet className="h-6 w-6" />}
-              title="CHECK BALANCE"
-              desc="View available balance"
-              onClick={() => setView("BALANCE")}
-            />
-            <Tile
-              icon={<Banknote className="h-6 w-6" />}
-              title="WITHDRAW"
-              desc="Cash withdrawal"
-              onClick={() => setView("WITHDRAW")}
-            />
-            <Tile
-              icon={<ArrowLeftRight className="h-6 w-6" />}
-              title="TRANSFER"
-              desc="Move funds to another account"
-              onClick={() => setView("TRANSFER")}
-            />
-            <Tile
-              icon={<History className="h-6 w-6" />}
-              title="TRANSACTION HISTORY"
-              desc="Last 10 transactions"
-              onClick={() => setView("HISTORY")}
-            />
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <Tile icon={<Wallet className="h-5 w-5" />} title="Balance" onClick={() => setView("BALANCE")} />
+            <Tile icon={<Banknote className="h-5 w-5" />} title="Withdraw" onClick={() => setView("WITHDRAW")} />
+            <Tile icon={<ArrowLeftRight className="h-5 w-5" />} title="Transfer" onClick={() => setView("TRANSFER")} />
+            <Tile icon={<History className="h-5 w-5" />} title="History" onClick={() => setView("HISTORY")} />
           </div>
         )}
 
@@ -137,27 +142,16 @@ function MenuPage() {
   );
 }
 
-function Tile({
-  icon,
-  title,
-  desc,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-  onClick: () => void;
-}) {
+function Tile({ icon, title, onClick }: { icon: React.ReactNode; title: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="group flex items-center gap-4 rounded border border-[color:var(--border)] bg-panel p-6 text-left transition hover:border-accent hover:bg-accent-dim"
+      className="flex flex-col items-start gap-3 rounded-3xl bg-panel p-4 text-left transition hover:bg-accent-dim"
     >
-      <div className="text-accent">{icon}</div>
-      <div>
-        <div className="text-sm tracking-widest text-accent">{title}</div>
-        <div className="text-xs text-muted">{desc}</div>
-      </div>
+      <span className="grid h-10 w-10 place-items-center rounded-full bg-accent text-[color:var(--bg)]">
+        {icon}
+      </span>
+      <span className="text-sm font-medium">{title}</span>
     </button>
   );
 }
@@ -165,12 +159,10 @@ function Tile({
 function BalanceView() {
   const { user } = useAuth();
   return (
-    <div className="rounded border border-[color:var(--border)] bg-panel p-8 text-center">
-      <div className="text-xs tracking-widest text-muted">AVAILABLE BALANCE</div>
-      <div className="count-in mt-4 text-5xl tracking-widest text-accent sm:text-6xl">
-        {formatNGN(user?.balance ?? 0)}
-      </div>
-      <div className="mt-3 text-xs text-muted">{new Date().toLocaleString("en-GB")}</div>
+    <div className="mt-5 rounded-3xl bg-panel p-8 text-center">
+      <div className="text-xs text-muted">Available balance</div>
+      <div className="mt-3 text-4xl font-semibold text-accent">{formatNGN(user?.balance ?? 0)}</div>
+      <div className="mt-2 text-xs text-muted">{new Date().toLocaleString("en-GB")}</div>
     </div>
   );
 }
@@ -211,22 +203,22 @@ function WithdrawView({ onDone }: { onDone: (r: ReceiptData) => void }) {
   };
 
   return (
-    <div className="rounded border border-[color:var(--border)] bg-panel p-6">
-      <div className="text-xs tracking-widest text-muted">WITHDRAW AMOUNT</div>
+    <div className="mt-5 rounded-3xl bg-panel p-5">
+      <div className="text-xs text-muted">Amount</div>
       <input
         type="number"
         inputMode="decimal"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
         placeholder="0.00"
-        className="mt-2 w-full rounded border border-[color:var(--border)] bg-background px-4 py-3 text-2xl tracking-widest outline-none focus:border-accent"
+        className="mt-1 w-full bg-transparent text-3xl font-semibold outline-none placeholder:text-muted/60"
       />
-      <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
+      <div className="mt-3 grid grid-cols-3 gap-2">
         {DENOMS.map((d) => (
           <button
             key={d}
             onClick={() => setAmount(String(d))}
-            className="rounded border border-[color:var(--border)] py-2 text-xs tracking-widest hover:border-accent hover:text-accent"
+            className="rounded-full bg-[color:var(--panel-2)] py-2 text-xs hover:text-accent"
           >
             ₦{d.toLocaleString()}
           </button>
@@ -236,9 +228,9 @@ function WithdrawView({ onDone }: { onDone: (r: ReceiptData) => void }) {
       <button
         onClick={submit}
         disabled={busy}
-        className="mt-4 w-full rounded border border-accent bg-accent py-3 text-sm font-bold tracking-widest text-[color:var(--bg)] hover:opacity-90 disabled:opacity-40"
+        className="mt-4 w-full rounded-full bg-accent py-3 font-medium text-[color:var(--bg)] hover:opacity-90 disabled:opacity-40"
       >
-        {busy ? "PROCESSING..." : "CONFIRM WITHDRAWAL"}
+        {busy ? "Processing…" : "Confirm withdrawal"}
       </button>
     </div>
   );
@@ -261,12 +253,7 @@ function TransferView({ onDone }: { onDone: (r: ReceiptData) => void }) {
     setErr(null);
     try {
       const r = (await txn({
-        data: {
-          session_token: sessionToken,
-          type: "TRANSFER",
-          amount: n,
-          recipient,
-        },
+        data: { session_token: sessionToken, type: "TRANSFER", amount: n, recipient },
       })) as { success: boolean; reference: string; new_balance: number };
       onDone({
         reference: r.reference,
@@ -287,29 +274,33 @@ function TransferView({ onDone }: { onDone: (r: ReceiptData) => void }) {
   };
 
   return (
-    <div className="rounded border border-[color:var(--border)] bg-panel p-6">
-      <div className="text-xs tracking-widest text-muted">RECIPIENT ACCOUNT</div>
-      <input
-        value={recipient}
-        onChange={(e) => setRecipient(e.target.value.replace(/\D/g, "").slice(0, 20))}
-        placeholder="0000000000"
-        className="mt-2 w-full rounded border border-[color:var(--border)] bg-background px-4 py-3 text-lg tracking-widest outline-none focus:border-accent"
-      />
-      <div className="mt-4 text-xs tracking-widest text-muted">AMOUNT</div>
-      <input
-        type="number"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        placeholder="0.00"
-        className="mt-2 w-full rounded border border-[color:var(--border)] bg-background px-4 py-3 text-2xl tracking-widest outline-none focus:border-accent"
-      />
-      {err && <div className="mt-3 text-xs text-danger">⚠ {err}</div>}
+    <div className="mt-5 space-y-3">
+      <div className="rounded-3xl bg-panel p-5">
+        <div className="text-xs text-muted">Recipient</div>
+        <input
+          value={recipient}
+          onChange={(e) => setRecipient(e.target.value.replace(/\D/g, "").slice(0, 20))}
+          placeholder="0000000000"
+          className="mt-1 w-full bg-transparent text-lg outline-none placeholder:text-muted/60"
+        />
+      </div>
+      <div className="rounded-3xl bg-panel p-5">
+        <div className="text-xs text-muted">Amount</div>
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="0.00"
+          className="mt-1 w-full bg-transparent text-3xl font-semibold outline-none placeholder:text-muted/60"
+        />
+      </div>
+      {err && <div className="text-xs text-danger">⚠ {err}</div>}
       <button
         onClick={submit}
         disabled={busy}
-        className="mt-4 w-full rounded border border-accent bg-accent py-3 text-sm font-bold tracking-widest text-[color:var(--bg)] hover:opacity-90 disabled:opacity-40"
+        className="w-full rounded-full bg-accent py-3 font-medium text-[color:var(--bg)] hover:opacity-90 disabled:opacity-40"
       >
-        {busy ? "PROCESSING..." : "CONFIRM TRANSFER"}
+        {busy ? "Processing…" : "Send"}
       </button>
     </div>
   );
@@ -341,54 +332,41 @@ function HistoryView({ userId }: { userId: string }) {
 
   if (!rows) {
     return (
-      <div className="flex items-center justify-center gap-2 rounded border border-[color:var(--border)] bg-panel p-8 text-muted">
-        <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+      <div className="mt-5 flex items-center justify-center gap-2 rounded-3xl bg-panel p-8 text-muted">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading…
       </div>
     );
   }
 
   if (rows.length === 0) {
     return (
-      <div className="rounded border border-[color:var(--border)] bg-panel p-8 text-center text-muted">
-        No transactions yet.
-      </div>
+      <div className="mt-5 rounded-3xl bg-panel p-8 text-center text-muted">No transactions yet.</div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded border border-[color:var(--border)] bg-panel">
-      <table className="w-full text-left text-xs">
-        <thead className="bg-background text-muted">
-          <tr>
-            <th className="px-3 py-2">DATE</th>
-            <th className="px-3 py-2">TYPE</th>
-            <th className="px-3 py-2">AMOUNT</th>
-            <th className="px-3 py-2">REFERENCE</th>
-            <th className="px-3 py-2">STATUS</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.id} className="border-t border-[color:var(--border)]">
-              <td className="px-3 py-2 text-muted">
-                {new Date(r.created_at).toLocaleString("en-GB")}
-              </td>
-              <td className="px-3 py-2">{r.type}</td>
-              <td
-                className={`px-3 py-2 ${
-                  r.type === "WITHDRAWAL" || r.type === "TRANSFER"
-                    ? "text-danger"
-                    : "text-accent"
-                }`}
-              >
-                {r.amount ? formatNGN(r.amount) : "—"}
-              </td>
-              <td className="px-3 py-2 text-muted">{r.reference}</td>
-              <td className="px-3 py-2 text-accent">{r.status}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="mt-5 space-y-2">
+      {rows.map((r) => {
+        const out = r.type === "WITHDRAWAL" || r.type === "TRANSFER";
+        return (
+          <div key={r.id} className="flex items-center gap-3 rounded-2xl bg-panel p-4">
+            <span
+              className={`grid h-9 w-9 place-items-center rounded-full ${
+                out ? "bg-[color:var(--danger)]/15 text-danger" : "bg-accent-dim text-accent"
+              }`}
+            >
+              {out ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+            </span>
+            <div className="flex-1">
+              <div className="text-sm">{r.type}</div>
+              <div className="text-xs text-muted">{new Date(r.created_at).toLocaleString("en-GB")}</div>
+            </div>
+            <div className={`text-sm font-medium ${out ? "text-danger" : "text-accent"}`}>
+              {r.amount ? formatNGN(r.amount) : "—"}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

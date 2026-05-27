@@ -1,70 +1,46 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 
 const STEPS = [
-  { path: "/", label: "WELCOME" },
-  { path: "/auth", label: "VERIFY" },
-  { path: "/menu", label: "TRANSACT" },
-  { path: "/logs", label: "LOGS" },
-  { path: "/about", label: "ABOUT" },
+  { path: "/", label: "Home" },
+  { path: "/auth", label: "Verify" },
+  { path: "/menu", label: "Account" },
+  { path: "/logs", label: "Logs" },
+  { path: "/about", label: "About" },
 ];
 
-export function TerminalHeader({ step }: { step?: number }) {
-  const [time, setTime] = useState("--:--:--");
+export function TerminalHeader({ step: _step }: { step?: number }) {
   const location = useLocation();
-  useEffect(() => {
-    const tick = () => setTime(new Date().toLocaleTimeString("en-GB"));
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  const activeStep =
-    step ??
-    Math.max(
-      0,
-      STEPS.findIndex((s) =>
-        s.path === "/" ? location.pathname === "/" : location.pathname.startsWith(s.path)
-      )
-    );
+  const isActive = (p: string) =>
+    p === "/" ? location.pathname === "/" : location.pathname.startsWith(p);
 
   return (
-    <header className="border-b border-[color:var(--border)] bg-panel">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-3">
-          <span className="pulse-dot" />
-          <Link to="/" className="font-mono text-lg tracking-widest text-accent">
-            SECUREPAY<span className="text-foreground">::ATM</span>
-          </Link>
-        </div>
+    <header className="sticky top-0 z-20 border-b border-[color:var(--border)] bg-[color:var(--bg)]/80 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
+        <Link to="/" className="flex items-center gap-2">
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-accent font-bold text-[color:var(--bg)]">S</span>
+          <span className="text-base font-semibold tracking-tight">SecurePay</span>
+        </Link>
         <nav className="hidden gap-1 md:flex">
-          {STEPS.map((s, i) => (
+          {STEPS.map((s) => (
             <Link
               key={s.path}
               to={s.path}
-              className={`rounded px-3 py-1 text-xs tracking-widest ${
-                i === activeStep
-                  ? "bg-accent-dim text-accent"
+              className={`rounded-full px-4 py-1.5 text-sm transition ${
+                isActive(s.path)
+                  ? "bg-accent text-[color:var(--bg)]"
                   : "text-muted hover:text-foreground"
               }`}
             >
-              {String(i + 1).padStart(2, "0")} · {s.label}
+              {s.label}
             </Link>
           ))}
-          <Link
-            to="/enroll"
-            className="ml-2 rounded border border-[color:var(--border)] px-3 py-1 text-xs tracking-widest text-muted hover:text-accent"
-          >
-            ENROLL
-          </Link>
         </nav>
-        <div className="font-mono text-sm text-accent">{time}</div>
-      </div>
-      <div className="h-[2px] w-full bg-[color:var(--border)]">
-        <div
-          className="h-full bg-accent transition-all"
-          style={{ width: `${((activeStep + 1) / STEPS.length) * 100}%` }}
-        />
+        <Link
+          to="/enroll"
+          className="rounded-full border border-[color:var(--border)] px-4 py-1.5 text-sm hover:border-accent hover:text-accent"
+        >
+          Enroll
+        </Link>
       </div>
     </header>
   );
