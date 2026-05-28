@@ -56,15 +56,15 @@ function MenuPage() {
   return (
     <div className="min-h-screen bg-background">
       <TerminalHeader step={2} />
-      <main className="mx-auto max-w-md px-5 pb-16 pt-6">
+      <main className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-accent-dim font-semibold text-accent">
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-accent-dim font-semibold text-accent sm:h-12 sm:w-12">
               {user.full_name.slice(0, 2).toUpperCase()}
             </span>
             <div>
               <div className="text-xs text-muted">Welcome</div>
-              <div className="text-sm font-medium">{user.full_name}</div>
+              <div className="text-sm font-medium sm:text-base">{user.full_name}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -79,62 +79,66 @@ function MenuPage() {
           </div>
         </div>
 
-        <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#9bef5a] via-[#5ed47a] to-[#1f2e26] p-6 text-[color:var(--bg)] shadow-xl">
-          <div className="text-xs opacity-70">Main Wallet</div>
-          <div className="mt-1 text-3xl font-semibold">{formatNGN(user.balance)}</div>
-          <div className="mt-1 text-xs opacity-70">{maskAccount(user.account_no)}</div>
-          <div className="mt-6 flex gap-2">
-            <button
-              onClick={() => setView("WITHDRAW")}
-              className="flex-1 rounded-full bg-[color:var(--bg)]/15 py-2 text-sm font-medium backdrop-blur"
-            >
-              Withdraw
-            </button>
-            <button
-              onClick={() => setView("TRANSFER")}
-              className="flex-1 rounded-full bg-[color:var(--bg)] py-2 text-sm font-medium text-accent"
-            >
-              Transfer
-            </button>
+        <div className="grid gap-5 lg:grid-cols-5">
+          <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#9bef5a] via-[#5ed47a] to-[#1f2e26] p-6 text-[color:var(--bg)] shadow-xl sm:p-8 lg:col-span-2">
+            <div className="text-xs opacity-70 sm:text-sm">Main Wallet</div>
+            <div className="mt-1 text-3xl font-semibold sm:text-4xl">{formatNGN(user.balance)}</div>
+            <div className="mt-1 text-xs opacity-70 sm:text-sm">{maskAccount(user.account_no)}</div>
+            <div className="mt-6 flex gap-2 sm:mt-10">
+              <button
+                onClick={() => setView("WITHDRAW")}
+                className="flex-1 rounded-full bg-[color:var(--bg)]/15 py-2 text-sm font-medium backdrop-blur"
+              >
+                Withdraw
+              </button>
+              <button
+                onClick={() => setView("TRANSFER")}
+                className="flex-1 rounded-full bg-[color:var(--bg)] py-2 text-sm font-medium text-accent"
+              >
+                Transfer
+              </button>
+            </div>
+          </section>
+
+          <div className="lg:col-span-3">
+            {view !== "GRID" && (
+              <button
+                onClick={() => setView("GRID")}
+                className="mb-3 inline-flex items-center gap-2 text-sm text-muted hover:text-accent"
+              >
+                <ArrowLeft className="h-4 w-4" /> Back
+              </button>
+            )}
+
+            {view === "GRID" && (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+                <Tile icon={<Wallet className="h-5 w-5" />} title="Balance" onClick={() => setView("BALANCE")} />
+                <Tile icon={<Banknote className="h-5 w-5" />} title="Withdraw" onClick={() => setView("WITHDRAW")} />
+                <Tile icon={<ArrowLeftRight className="h-5 w-5" />} title="Transfer" onClick={() => setView("TRANSFER")} />
+                <Tile icon={<History className="h-5 w-5" />} title="History" onClick={() => setView("HISTORY")} />
+              </div>
+            )}
+
+            {view === "BALANCE" && <BalanceView />}
+            {view === "WITHDRAW" && (
+              <WithdrawView
+                onDone={(r) => {
+                  setReceipt(r);
+                  setUser({ ...user, balance: r.new_balance });
+                }}
+              />
+            )}
+            {view === "TRANSFER" && (
+              <TransferView
+                onDone={(r) => {
+                  setReceipt(r);
+                  setUser({ ...user, balance: r.new_balance });
+                }}
+              />
+            )}
+            {view === "HISTORY" && <HistoryView userId={user.id} />}
           </div>
-        </section>
-
-        {view !== "GRID" && (
-          <button
-            onClick={() => setView("GRID")}
-            className="mt-5 inline-flex items-center gap-2 text-sm text-muted hover:text-accent"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back
-          </button>
-        )}
-
-        {view === "GRID" && (
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <Tile icon={<Wallet className="h-5 w-5" />} title="Balance" onClick={() => setView("BALANCE")} />
-            <Tile icon={<Banknote className="h-5 w-5" />} title="Withdraw" onClick={() => setView("WITHDRAW")} />
-            <Tile icon={<ArrowLeftRight className="h-5 w-5" />} title="Transfer" onClick={() => setView("TRANSFER")} />
-            <Tile icon={<History className="h-5 w-5" />} title="History" onClick={() => setView("HISTORY")} />
-          </div>
-        )}
-
-        {view === "BALANCE" && <BalanceView />}
-        {view === "WITHDRAW" && (
-          <WithdrawView
-            onDone={(r) => {
-              setReceipt(r);
-              setUser({ ...user, balance: r.new_balance });
-            }}
-          />
-        )}
-        {view === "TRANSFER" && (
-          <TransferView
-            onDone={(r) => {
-              setReceipt(r);
-              setUser({ ...user, balance: r.new_balance });
-            }}
-          />
-        )}
-        {view === "HISTORY" && <HistoryView userId={user.id} />}
+        </div>
 
         <ReceiptModal data={receipt} onClose={() => setReceipt(null)} />
       </main>

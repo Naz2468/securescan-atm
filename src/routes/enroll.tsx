@@ -148,12 +148,15 @@ function EnrollPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background font-mono">
+    <div className="min-h-screen bg-background">
       <TerminalHeader />
-      <main className="mx-auto max-w-6xl px-4 py-6">
-        <div className="mb-4">
-          <div className="text-xs tracking-widest text-muted">// ADMIN · ENROLLMENT</div>
-          <h1 className="text-2xl text-accent">Biometric Enrollment</h1>
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+        <div className="mb-6">
+          <div className="text-xs tracking-widest text-muted">SIGN UP</div>
+          <h1 className="text-2xl font-semibold text-accent sm:text-3xl">Create your account</h1>
+          <p className="mt-1 text-sm text-muted">
+            Register your face and fingerprint. Both are required to sign in.
+          </p>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">

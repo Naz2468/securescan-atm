@@ -253,17 +253,17 @@ function AuthPage() {
   return (
     <div className="min-h-screen bg-background">
       <TerminalHeader step={1} />
-      <main className="mx-auto max-w-md px-5 pb-16 pt-6">
+      <main className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6">
         <div className="mb-5 flex items-center justify-between">
           <div>
             <div className="text-xs text-muted">Verifying</div>
-            <div className="text-lg font-medium">{maskAccount(acct)}</div>
+            <div className="text-lg font-medium sm:text-xl">{maskAccount(acct)}</div>
           </div>
           <a href="/" className="text-sm text-muted hover:text-accent">Cancel</a>
         </div>
 
-        <div className="space-y-4">
-          <section className="rounded-3xl bg-panel p-5">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <section className="rounded-3xl bg-panel p-5 sm:p-6">
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="grid h-8 w-8 place-items-center rounded-full bg-accent-dim text-accent">
@@ -283,7 +283,7 @@ function AuthPage() {
             </button>
           </section>
 
-          <section className="rounded-3xl bg-panel p-5">
+          <section className="rounded-3xl bg-panel p-5 sm:p-6">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-sm font-medium">Fingerprint</span>
               <span className="text-xs text-muted">{fingerStatus}</span>
@@ -292,12 +292,12 @@ function AuthPage() {
             {!storedFingerUrl && (
               <div className="mt-3 text-xs text-warn">
                 No fingerprint enrolled.{" "}
-                <a href="/enroll" className="underline">Enroll first</a>
+                <a href="/enroll" className="underline">Sign up first</a>
               </div>
             )}
           </section>
 
-          <section className="rounded-3xl bg-panel p-5">
+          <section className="rounded-3xl bg-panel p-5 sm:p-6 lg:col-span-2">
             <BiometricStatus
               faceStatus={faceStatus}
               faceScore={faceDescriptor ? null : null}
@@ -307,7 +307,7 @@ function AuthPage() {
             <button
               onClick={runAuth}
               disabled={!canAuthenticate || authing}
-              className="mt-4 w-full rounded-full bg-accent py-3 text-sm font-medium text-[color:var(--bg)] hover:opacity-90 disabled:opacity-30"
+              className="mt-4 w-full rounded-full bg-accent py-3 text-sm font-medium text-[color:var(--bg)] hover:opacity-90 disabled:opacity-30 sm:py-3.5 sm:text-base"
             >
               {authing ? "Authenticating…" : "Authenticate"}
             </button>
