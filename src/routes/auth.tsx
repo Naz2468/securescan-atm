@@ -3,19 +3,14 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { TerminalHeader } from "@/components/TerminalHeader";
 import { WebcamCapture, type WebcamHandle } from "@/components/WebcamCapture";
-import { FingerprintUpload } from "@/components/FingerprintUpload";
 import { BiometricStatus, type FactorStatus } from "@/components/BiometricStatus";
 import { useAuth } from "@/contexts/AuthContext";
 import { useServerFn } from "@tanstack/react-start";
 import { authenticate } from "@/lib/atm.functions";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  loadFaceApi,
-  loadOpenCV,
-  compareFingerprints,
-  loadImageFromUrl,
-} from "@/lib/biometric-loaders";
-import { Check, Loader2, ScanFace, X } from "lucide-react";
+import { loadFaceApi, detectorOptions } from "@/lib/biometric-loaders";
+import { getDeviceFingerprint, loadDeviceFp } from "@/lib/device-fp";
+import { Check, Fingerprint, Loader2, ScanFace, X } from "lucide-react";
 import { maskAccount, formatNGN } from "@/lib/format";
 
 export const Route = createFileRoute("/auth")({
@@ -47,19 +42,19 @@ function AuthPage() {
 
   const [modelsReady, setModelsReady] = useState(false);
   const [modelsError, setModelsError] = useState<string | null>(null);
-  const [loadingMsg, setLoadingMsg] = useState("LOADING BIOMETRIC MODELS...");
+  const [loadingMsg, setLoadingMsg] = useState("Loading face models…");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     let cancelled = false;
+    // Warm up FingerprintJS in parallel (it's tiny, <50KB)
+    loadDeviceFp().catch(() => {});
     (async () => {
       try {
-        setLoadingMsg("LOADING FACE-API MODELS...");
+        setLoadingMsg("Loading face recognition…");
         await loadFaceApi();
         if (cancelled) return;
         setModelsReady(true);
-        // Warm OpenCV in the background; failures here don't block the UI.
-        loadOpenCV().catch((err) => console.warn("opencv warm failed", err));
       } catch (e) {
         setModelsError((e as Error).message);
       }
@@ -74,11 +69,12 @@ function AuthPage() {
   const [faceStatus, setFaceStatus] = useState<FactorStatus>("IDLE");
   const [faceDescriptor, setFaceDescriptor] = useState<number[] | null>(null);
 
-  // Finger state
+  // Device fingerprint state
   const [fingerStatus, setFingerStatus] = useState<FactorStatus>("WAITING");
   const [fingerScore, setFingerScore] = useState<number | null>(null);
   const [fingerMatch, setFingerMatch] = useState<boolean>(false);
-  const [storedFingerUrl, setStoredFingerUrl] = useState<string | null>(null);
+  const [visitorId, setVisitorId] = useState<string | null>(null);
+  const [storedVisitorId, setStoredVisitorId] = useState<string | null>(null);
 
   // Auth call
   const authFn = useServerFn(authenticate);
@@ -86,7 +82,7 @@ function AuthPage() {
   const [result, setResult] = useState<Result | null>(null);
   const [progress, setProgress] = useState<string[]>([]);
 
-  // Fetch stored fingerprint URL once account is set (for in-browser ORB matching)
+  // Fetch stored device fingerprint for this account
   useEffect(() => {
     if (!acct) return;
     let cancelled = false;
@@ -99,16 +95,13 @@ function AuthPage() {
       if (!user) return;
       const { data: bio } = await supabase
         .from("biometrics")
-        .select("fingerprint_path")
+        .select("device_fp")
         .eq("user_id", user.id)
         .order("registered_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (!bio?.fingerprint_path || cancelled) return;
-      const { data: signed } = await supabase.storage
-        .from("biometrics")
-        .createSignedUrl(bio.fingerprint_path, 60);
-      if (!cancelled && signed?.signedUrl) setStoredFingerUrl(signed.signedUrl);
+      if (cancelled) return;
+      if (bio?.device_fp) setStoredVisitorId(bio.device_fp);
     })();
     return () => {
       cancelled = true;
@@ -124,7 +117,7 @@ function AuthPage() {
       if (!video) throw new Error("camera not ready");
       setFaceStatus("PROCESSING");
       const detection = await faceapi
-        .detectSingleFace(video)
+        .detectSingleFace(video, detectorOptions())
         .withFaceLandmarks()
         .withFaceDescriptor();
       if (!detection) {
@@ -141,22 +134,15 @@ function AuthPage() {
     }
   };
 
-  const onFingerPicked = async (_file: File, dataUrl: string) => {
-    if (!modelsReady) return;
+  const scanFingerprint = async () => {
     setFingerStatus("SCANNING");
     setFingerScore(null);
     setFingerMatch(false);
     try {
-      if (!storedFingerUrl) {
-        setFingerStatus("FAILED");
-        setFingerScore(0);
-        return;
-      }
-      const [live, stored] = await Promise.all([
-        loadImageFromUrl(dataUrl),
-        loadImageFromUrl(storedFingerUrl),
-      ]);
-      const { score, match } = await compareFingerprints(live, stored);
+      const { visitorId: vid, confidence } = await getDeviceFingerprint();
+      setVisitorId(vid);
+      const match = !!storedVisitorId && vid === storedVisitorId;
+      const score = match ? Math.round(confidence * 100) : 0;
       setFingerScore(score);
       setFingerMatch(match);
       setFingerStatus(match ? "MATCHED" : "FAILED");
@@ -177,7 +163,7 @@ function AuthPage() {
     const push = (s: string) => setProgress((p) => [...p, s]);
     try {
       push("> connecting secure channel...");
-      await new Promise((r) => setTimeout(r, 250));
+      await new Promise((r) => setTimeout(r, 200));
       push("> verifying biometric vectors...");
       const r = (await authFn({
         data: {
@@ -192,7 +178,7 @@ function AuthPage() {
       if (r.granted && r.session_token && r.session_expires_at && r.user) {
         setUser(r.user);
         setSession(r.session_token, new Date(r.session_expires_at).getTime());
-        setTimeout(() => nav({ to: "/menu" }), 2500);
+        setTimeout(() => nav({ to: "/menu" }), 2000);
       }
     } catch (e) {
       push("> ERROR: " + (e as Error).message);
@@ -216,6 +202,7 @@ function AuthPage() {
     setFingerStatus("WAITING");
     setFingerScore(null);
     setFingerMatch(false);
+    setVisitorId(null);
     setProgress([]);
   };
 
@@ -285,13 +272,47 @@ function AuthPage() {
 
           <section className="rounded-3xl bg-panel p-5 sm:p-6">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-medium">Fingerprint</span>
+              <div className="flex items-center gap-2">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-accent-dim text-accent">
+                  <Fingerprint className="h-4 w-4" />
+                </span>
+                <span className="text-sm font-medium">Device fingerprint</span>
+              </div>
               <span className="text-xs text-muted">{fingerStatus}</span>
             </div>
-            <FingerprintUpload onPicked={onFingerPicked} status={fingerStatus as never} />
-            {!storedFingerUrl && (
+            <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-[color:var(--border)] bg-background p-4 text-center">
+              <Fingerprint
+                className={`h-16 w-16 ${
+                  fingerStatus === "MATCHED"
+                    ? "text-accent"
+                    : fingerStatus === "FAILED"
+                    ? "text-danger"
+                    : "text-muted"
+                } ${fingerStatus === "SCANNING" ? "animate-pulse" : ""}`}
+              />
+              <div className="mt-3 text-xs text-muted">
+                Real-time browser fingerprint (FingerprintJS)
+              </div>
+              {visitorId && (
+                <div className="mt-2 font-mono text-[10px] text-muted">
+                  ID: {visitorId.slice(0, 12)}…
+                </div>
+              )}
+            </div>
+            <button
+              onClick={scanFingerprint}
+              disabled={fingerStatus === "SCANNING"}
+              className="mt-3 w-full rounded-full bg-accent-dim py-2.5 text-sm text-accent hover:bg-accent hover:text-[color:var(--bg)] disabled:opacity-40"
+            >
+              {fingerStatus === "SCANNING"
+                ? "Scanning…"
+                : fingerStatus === "MATCHED" || fingerStatus === "FAILED"
+                ? "Re-scan"
+                : "Scan fingerprint"}
+            </button>
+            {!storedVisitorId && (
               <div className="mt-3 text-xs text-warn">
-                No fingerprint enrolled.{" "}
+                No device fingerprint enrolled for this account.{" "}
                 <a href="/enroll" className="underline">Sign up first</a>
               </div>
             )}
@@ -360,16 +381,8 @@ function AuthResult({ result, onRetry }: { result: Result; onRetry: () => void }
                 </tr>
               </thead>
               <tbody>
-                <Row
-                  label="FACE"
-                  score={result.face_score}
-                  ok={result.face_match}
-                />
-                <Row
-                  label="FINGERPRINT"
-                  score={result.finger_score}
-                  ok={result.finger_match}
-                />
+                <Row label="FACE" score={result.face_score} ok={result.face_match} />
+                <Row label="FINGERPRINT" score={result.finger_score} ok={result.finger_match} />
               </tbody>
             </table>
             <button
