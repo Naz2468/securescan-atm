@@ -10,8 +10,8 @@ declare global {
   }
 }
 
-const FACE_API_SRC = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js";
-const FACE_MODELS_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
+const FACE_API_SRC = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.min.js";
+const FACE_MODELS_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model/";
 const OPENCV_SRC = "https://docs.opencv.org/4.8.0/opencv.js";
 
 function loadScript(src: string, onload?: () => void): Promise<void> {
@@ -52,8 +52,9 @@ export async function loadFaceApi(): Promise<any> {
     await loadScript(FACE_API_SRC);
     const faceapi = window.faceapi;
     if (!faceapi) throw new Error("face-api not on window");
+    // TinyFaceDetector (~190KB) is ~10x faster to download than SSD MobileNet.
     await Promise.all([
-      faceapi.nets.ssdMobilenetv1.loadFromUri(FACE_MODELS_URL),
+      faceapi.nets.tinyFaceDetector.loadFromUri(FACE_MODELS_URL),
       faceapi.nets.faceLandmark68Net.loadFromUri(FACE_MODELS_URL),
       faceapi.nets.faceRecognitionNet.loadFromUri(FACE_MODELS_URL),
     ]);
@@ -62,6 +63,12 @@ export async function loadFaceApi(): Promise<any> {
   })();
   return window.__faceApiPromise;
 }
+
+export function detectorOptions(): any {
+  const faceapi = window.faceapi;
+  return new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+}
+
 
 export async function loadOpenCV(): Promise<any> {
   if (typeof window === "undefined") throw new Error("opencv requires browser");
