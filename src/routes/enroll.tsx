@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { TerminalHeader } from "@/components/TerminalHeader";
 import { WebcamCapture, type WebcamHandle } from "@/components/WebcamCapture";
-import { FingerprintUpload } from "@/components/FingerprintUpload";
 import { supabase } from "@/integrations/supabase/client";
-import { loadFaceApi } from "@/lib/biometric-loaders";
-import { Check, Loader2, RefreshCw } from "lucide-react";
+import { loadFaceApi, detectorOptions } from "@/lib/biometric-loaders";
+import { getDeviceFingerprint, loadDeviceFp } from "@/lib/device-fp";
+import { Check, Fingerprint, Loader2, RefreshCw } from "lucide-react";
 import { maskAccount } from "@/lib/format";
 
 export const Route = createFileRoute("/enroll")({
@@ -23,9 +23,9 @@ function EnrollPage() {
   const [modelsReady, setModelsReady] = useState(false);
   const [fullName, setFullName] = useState("");
   const [acct, setAcct] = useState("");
-  const [fingerFile, setFingerFile] = useState<File | null>(null);
-  const [fingerPreview, setFingerPreview] = useState<string | null>(null);
   const [descriptor, setDescriptor] = useState<number[] | null>(null);
+  const [visitorId, setVisitorId] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
@@ -35,6 +35,7 @@ function EnrollPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    loadDeviceFp().catch(() => {});
     loadFaceApi().then(() => setModelsReady(true)).catch((e) => setError(e.message));
   }, []);
 
@@ -74,7 +75,7 @@ function EnrollPage() {
       const video = camRef.current?.getVideo();
       if (!video) throw new Error("camera not ready");
       const det = await faceapi
-        .detectSingleFace(video)
+        .detectSingleFace(video, detectorOptions())
         .withFaceLandmarks()
         .withFaceDescriptor();
       if (!det) throw new Error("No face detected. Look directly at the camera.");
@@ -87,16 +88,28 @@ function EnrollPage() {
     }
   };
 
+  const scanDevice = async () => {
+    setScanning(true);
+    setError(null);
+    try {
+      const { visitorId: vid } = await getDeviceFingerprint();
+      setVisitorId(vid);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setScanning(false);
+    }
+  };
+
   const enroll = async () => {
     setError(null);
     setSuccess(null);
     if (!fullName.trim()) return setError("Enter full name");
     if (!/^\d{6,20}$/.test(acct)) return setError("Account # must be 6-20 digits");
     if (!descriptor) return setError("Capture a face first");
-    if (!fingerFile) return setError("Upload a fingerprint image");
+    if (!visitorId) return setError("Scan your device fingerprint first");
     setEnrolling(true);
     try {
-      // create/find user
       let userId: string;
       const { data: existing } = await supabase
         .from("atm_users")
@@ -115,21 +128,10 @@ function EnrollPage() {
         userId = created.id;
       }
 
-      const path = `${userId}/${Date.now()}_${fingerFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      const { error: uperr } = await supabase.storage
-        .from("biometrics")
-        .upload(path, fingerFile, { upsert: false, contentType: fingerFile.type });
-      if (uperr) throw new Error(uperr.message);
-      const { data: signed } = await supabase.storage
-        .from("biometrics")
-        .createSignedUrl(path, 60 * 60 * 24 * 365);
-      const url = signed?.signedUrl ?? "";
-
       const { error: berr } = await supabase.from("biometrics").insert({
         user_id: userId,
         face_descriptor: JSON.stringify(descriptor),
-        fingerprint_url: url,
-        fingerprint_path: path,
+        device_fp: visitorId,
       });
       if (berr) throw new Error(berr.message);
 
@@ -137,8 +139,7 @@ function EnrollPage() {
       setFullName("");
       setAcct("");
       setDescriptor(null);
-      setFingerFile(null);
-      setFingerPreview(null);
+      setVisitorId(null);
       refreshList();
     } catch (e) {
       setError((e as Error).message);
@@ -155,7 +156,7 @@ function EnrollPage() {
           <div className="text-xs tracking-widest text-muted">SIGN UP</div>
           <h1 className="text-2xl font-semibold text-accent sm:text-3xl">Create your account</h1>
           <p className="mt-1 text-sm text-muted">
-            Register your face and fingerprint. Both are required to sign in.
+            Register your face and this device's fingerprint. Both are required to sign in.
           </p>
         </div>
 
@@ -218,21 +219,32 @@ function EnrollPage() {
           </section>
 
           <section className="rounded border border-[color:var(--border)] bg-panel p-4">
-            <div className="text-xs tracking-widest text-accent">FINGERPRINT IMAGE</div>
-            <div className="mt-2">
-              <FingerprintUpload
-                status={fingerFile ? "MATCHED" : "WAITING"}
-                onPicked={(f, url) => {
-                  setFingerFile(f);
-                  setFingerPreview(url);
-                }}
+            <div className="text-xs tracking-widest text-accent">DEVICE FINGERPRINT</div>
+            <p className="mt-2 text-xs text-muted">
+              Real-time browser fingerprint generated by FingerprintJS. This locks your account to this device.
+            </p>
+            <div className="mt-3 flex h-56 flex-col items-center justify-center rounded border border-dashed border-[color:var(--border)] bg-background p-4 text-center">
+              <Fingerprint
+                className={`h-16 w-16 ${
+                  visitorId ? "text-accent" : "text-muted"
+                } ${scanning ? "animate-pulse" : ""}`}
               />
-              {fingerPreview && (
-                <div className="mt-2 text-xs text-accent">
-                  ✓ {fingerFile?.name} ready
+              <div className="mt-3 text-xs text-muted">
+                {visitorId ? "Fingerprint captured" : "No fingerprint yet"}
+              </div>
+              {visitorId && (
+                <div className="mt-2 font-mono text-[10px] text-accent break-all">
+                  {visitorId}
                 </div>
               )}
             </div>
+            <button
+              onClick={scanDevice}
+              disabled={scanning}
+              className="mt-3 w-full rounded border border-accent bg-accent-dim py-2 text-xs tracking-widest text-accent hover:bg-accent hover:text-[color:var(--bg)] disabled:opacity-40"
+            >
+              {scanning ? "SCANNING..." : visitorId ? "RE-SCAN FINGERPRINT" : "SCAN FINGERPRINT"}
+            </button>
 
             {error && <div className="mt-4 text-xs text-danger">⚠ {error}</div>}
             {success && <div className="mt-4 text-xs text-accent">✓ {success}</div>}
