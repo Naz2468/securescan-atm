@@ -113,25 +113,28 @@ export type Database = {
       }
       biometrics: {
         Row: {
+          device_fp: string | null
           face_descriptor: string
-          fingerprint_path: string
-          fingerprint_url: string
+          fingerprint_path: string | null
+          fingerprint_url: string | null
           id: string
           registered_at: string
           user_id: string
         }
         Insert: {
+          device_fp?: string | null
           face_descriptor: string
-          fingerprint_path: string
-          fingerprint_url: string
+          fingerprint_path?: string | null
+          fingerprint_url?: string | null
           id?: string
           registered_at?: string
           user_id: string
         }
         Update: {
+          device_fp?: string | null
           face_descriptor?: string
-          fingerprint_path?: string
-          fingerprint_url?: string
+          fingerprint_path?: string | null
+          fingerprint_url?: string | null
           id?: string
           registered_at?: string
           user_id?: string
