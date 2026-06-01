@@ -50,15 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setSession = (token: string | null, expiry: number | null) => {
     setSessionToken(token);
     setSessionExpiry(expiry);
-    if (typeof window !== "undefined") {
-      if (token && expiry) {
-        localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({ sessionToken: token, sessionExpiry: expiry, user })
-        );
-      } else {
-        localStorage.removeItem(STORAGE_KEY);
-      }
+    // Persistence is handled by the [user, sessionToken, sessionExpiry] effect below
+    // to avoid stale-closure issues where `user` would be null here.
+    if (typeof window !== "undefined" && !(token && expiry)) {
+      localStorage.removeItem(STORAGE_KEY);
     }
   };
 

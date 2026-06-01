@@ -99,7 +99,7 @@ export const authenticate = createServerFn({ method: "POST" })
       };
     }
 
-    const expiresAt = new Date(Date.now() + 60_000).toISOString();
+    const expiresAt = new Date(Date.now() + 5 * 60_000).toISOString();
     const { data: sess, error: serr } = await supabaseAdmin
       .from("atm_sessions")
       .insert({ user_id: user.id, expires_at: expiresAt })
