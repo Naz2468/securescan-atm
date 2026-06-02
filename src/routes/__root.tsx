@@ -63,6 +63,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Academic prototype: Secure ATM 2-Factor Authentication using Facial Recognition and Fingerprint matching.",
       },
+      { property: "og:title", content: "SecurePay ATM · 2-Factor Biometric Authentication" },
+      { name: "twitter:title", content: "SecurePay ATM · 2-Factor Biometric Authentication" },
+      { name: "description", content: "SecureScan ATM is a 2-factor authentication system for ATMs using facial and fingerprint recognition." },
+      { property: "og:description", content: "SecureScan ATM is a 2-factor authentication system for ATMs using facial and fingerprint recognition." },
+      { name: "twitter:description", content: "SecureScan ATM is a 2-factor authentication system for ATMs using facial and fingerprint recognition." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3417b9e9-f05e-4b77-b3d5-a40853904a77/id-preview-1e1d7982--0c9a2e12-ca1c-4858-8cdc-1de6d616d741.lovable.app-1780363248452.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3417b9e9-f05e-4b77-b3d5-a40853904a77/id-preview-1e1d7982--0c9a2e12-ca1c-4858-8cdc-1de6d616d741.lovable.app-1780363248452.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
